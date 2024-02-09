@@ -1,3 +1,4 @@
 /events.proto
 /events_pb2.py
 /__pycache__
+.env

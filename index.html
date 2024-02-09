@@ -9,8 +9,12 @@
 </head>
 <body style="background-color: #171717; color: #f9f9f9!important;">
     <div class="container pt-5">
-        <button class="btn btn-secondary" onclick="sendRequest('/create_lobby')">Create Lobby</button>
-        <button class="btn btn-secondary" onclick="sendRequest('/send_chat')">Create Lobby</button>
+        <div class="col">
+            <button class="btn btn-secondary" onclick="sendRequest('/create_lobby')">Create Lobby</button>
+            <button class="btn btn-secondary" onclick="sendRequest('/join_lobby')">Join Lobby</button>
+            <button class="btn btn-danger" onclick="sendRequest('/leave_lobby')">Leave Lobby</button>
+        </div>
+     
         <form class="p-2" method="POST" action="/send_chat" onsubmit="event.preventDefault(); sendRequest('/send_chat', this);">
             <input type="text" name="Message" id="chat">
             <button type="submit">Send</button>

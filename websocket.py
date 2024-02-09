@@ -1,3 +1,6 @@
+import os
+from dotenv import load_dotenv
+
 import asyncio
 import socket
 import websockets
@@ -8,10 +11,13 @@ from aiohttp import web, ClientSession
 import aiohttp_jinja2
 import jinja2
 
+load_dotenv()
+
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger('websocket_server')
 
 websockets_connected = set()
+roleToken = os.getenv('roleToken')
 
 def create_lobby():
     request = Request()
@@ -20,6 +26,25 @@ def create_lobby():
 
     for ws in websockets_connected:
         asyncio.create_task(ws.send(request.SerializeToString()))
+
+
+def join_lobby():
+    request = Request()
+    request.customMatch_JoinLobby.CopyFrom(CustomMatch_JoinLobby(roleToken=roleToken))
+    request.withAck = True  # Request an acknowledgement of your request by setting `withAck` to true
+
+    for ws in websockets_connected:
+        asyncio.create_task(ws.send(request.SerializeToString()))
+
+# leave lobby possibly not working, getting success but not happening
+def leave_lobby():
+    request = Request()
+    request.customMatch_LeaveLobby.CopyFrom(CustomMatch_LeaveLobby())
+    request.withAck = True  # Request an acknowledgement of your request by setting `withAck` to true
+
+    for ws in websockets_connected:
+        asyncio.create_task(ws.send(request.SerializeToString()))
+
 
 def send_chat(message):
     request = Request()
@@ -54,9 +79,22 @@ async def get_players_request(request):
     response = get_players()
     return web.json_response(response)
 
+
 async def create_lobby_request(request):
     # Create lobby and store response in memory
     response = create_lobby()
+    return web.json_response(response)
+
+
+async def join_lobby_request(request):
+    # Create lobby and store response in memory
+    response = join_lobby()
+    return web.json_response(response)
+
+
+async def leave_lobby_request(request):
+    # Create lobby and store response in memory
+    response = leave_lobby()
     return web.json_response(response)
 
 async def repl( websocket ):
@@ -65,13 +103,12 @@ async def repl( websocket ):
         try:
             incoming = LiveAPIEvent()
             incoming.ParseFromString(message)
-            print(incoming)
+            print( incoming )
         except websockets.exceptions.ConnectionClosedError:
             # Explicitly ignoring 'ConnectionClosedError' exceptions.
             pass
-        except Exception as e:
-            # Optional: Handle other exceptions or pass to ignore
-            pass
+        except:
+            print( message )
 
 
 # set up web server
@@ -79,6 +116,8 @@ async def main():
     app = web.Application()
     app.router.add_get('/', index)
     app.router.add_get('/create_lobby', create_lobby_request)
+    app.router.add_get('/join_lobby', join_lobby_request)
+    app.router.add_get('/leave_lobby', leave_lobby_request)
     app.router.add_get('/send_chat', send_chat_request)
     app.router.add_post('/send_chat', send_chat_request)
     aiohttp_jinja2.setup(app, loader=jinja2.FileSystemLoader('.'))
